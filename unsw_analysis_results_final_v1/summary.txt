@@ -1,0 +1,1264 @@
+==================================================
+ Intrusion Detection System Analysis Report
+==================================================
+Timestamp: 2025-05-02 11:25:35
+Dataset: UNSW
+Input Directory: ./datasets
+Output Directory: ./unsw_analysis_results_final_v1
+Sample Size: 20000
+Run ANN: True
+Run Fuzzy C-Means: True
+Run SHAP: True
+Feature Selection Correlation Threshold: 0.9
+--------------------------------------------------
+
+--- Loading Dataset: UNSW ---
+Successfully loaded and combined ./datasets/UNSW_NB15_training-set.csv and ./datasets/UNSW_NB15_testing-set.csv
+Original dataset shape: (257673, 45)
+Dropping columns: ['id', 'attack_cat']
+Sampling dataset to 20000 rows...
+Dataset shape after initial processing: (20000, 43)
+Converting target column 'label' from float to integer.
+
+Dataset Head:
+             dur proto service state  ...  ct_src_ltm  ct_srv_dst  is_sm_ips_ports  label
+122637  0.050984   tcp       -   FIN  ...           3           4                0      0
+137118  0.000008   pgm       -   INT  ...           8           6                0      1
+245289  0.000003   udp     dns   INT  ...          18          17                0      1
+221262  0.000003   udp     dns   INT  ...          32          36                0      1
+31408   1.431244   tcp    http   FIN  ...           1           2                0      0
+
+[5 rows x 43 columns]
+
+Dataset Info:
+<class 'pandas.core.frame.DataFrame'>
+Index: 20000 entries, 122637 to 180285
+Data columns (total 43 columns):
+ #   Column             Non-Null Count  Dtype  
+---  ------             --------------  -----  
+ 0   dur                20000 non-null  float64
+ 1   proto              20000 non-null  object 
+ 2   service            20000 non-null  object 
+ 3   state              20000 non-null  object 
+ 4   spkts              20000 non-null  int64  
+ 5   dpkts              20000 non-null  int64  
+ 6   sbytes             20000 non-null  int64  
+ 7   dbytes             20000 non-null  int64  
+ 8   rate               20000 non-null  float64
+ 9   sttl               20000 non-null  int64  
+ 10  dttl               20000 non-null  int64  
+ 11  sload              20000 non-null  float64
+ 12  dload              20000 non-null  float64
+ 13  sloss              20000 non-null  int64  
+ 14  dloss              20000 non-null  int64  
+ 15  sinpkt             20000 non-null  float64
+ 16  dinpkt             20000 non-null  float64
+ 17  sjit               20000 non-null  float64
+ 18  djit               20000 non-null  float64
+ 19  swin               20000 non-null  int64  
+ 20  stcpb              20000 non-null  int64  
+ 21  dtcpb              20000 non-null  int64  
+ 22  dwin               20000 non-null  int64  
+ 23  tcprtt             20000 non-null  float64
+ 24  synack             20000 non-null  float64
+ 25  ackdat             20000 non-null  float64
+ 26  smean              20000 non-null  int64  
+ 27  dmean              20000 non-null  int64  
+ 28  trans_depth        20000 non-null  int64  
+ 29  response_body_len  20000 non-null  int64  
+ 30  ct_srv_src         20000 non-null  int64  
+ 31  ct_state_ttl       20000 non-null  int64  
+ 32  ct_dst_ltm         20000 non-null  int64  
+ 33  ct_src_dport_ltm   20000 non-null  int64  
+ 34  ct_dst_sport_ltm   20000 non-null  int64  
+ 35  ct_dst_src_ltm     20000 non-null  int64  
+ 36  is_ftp_login       20000 non-null  int64  
+ 37  ct_ftp_cmd         20000 non-null  int64  
+ 38  ct_flw_http_mthd   20000 non-null  int64  
+ 39  ct_src_ltm         20000 non-null  int64  
+ 40  ct_srv_dst         20000 non-null  int64  
+ 41  is_sm_ips_ports    20000 non-null  int64  
+ 42  label              20000 non-null  int64  
+dtypes: float64(11), int64(29), object(3)
+memory usage: 6.7+ MB
+
+Target Column ('label') Distribution:
+label
+1    0.6355
+0    0.3645
+Name: proportion, dtype: float64
+
+############################################################
+ RUNNING ANALYSIS: BEFORE OUTLIER REMOVAL
+############################################################
+
+--- Basic Exploratory Data Analysis (EDA) ---
+
+=== Dataset Info ===
+<class 'pandas.core.frame.DataFrame'>
+Index: 20000 entries, 122637 to 180285
+Data columns (total 43 columns):
+ #   Column             Non-Null Count  Dtype  
+---  ------             --------------  -----  
+ 0   dur                20000 non-null  float64
+ 1   proto              20000 non-null  object 
+ 2   service            20000 non-null  object 
+ 3   state              20000 non-null  object 
+ 4   spkts              20000 non-null  int64  
+ 5   dpkts              20000 non-null  int64  
+ 6   sbytes             20000 non-null  int64  
+ 7   dbytes             20000 non-null  int64  
+ 8   rate               20000 non-null  float64
+ 9   sttl               20000 non-null  int64  
+ 10  dttl               20000 non-null  int64  
+ 11  sload              20000 non-null  float64
+ 12  dload              20000 non-null  float64
+ 13  sloss              20000 non-null  int64  
+ 14  dloss              20000 non-null  int64  
+ 15  sinpkt             20000 non-null  float64
+ 16  dinpkt             20000 non-null  float64
+ 17  sjit               20000 non-null  float64
+ 18  djit               20000 non-null  float64
+ 19  swin               20000 non-null  int64  
+ 20  stcpb              20000 non-null  int64  
+ 21  dtcpb              20000 non-null  int64  
+ 22  dwin               20000 non-null  int64  
+ 23  tcprtt             20000 non-null  float64
+ 24  synack             20000 non-null  float64
+ 25  ackdat             20000 non-null  float64
+ 26  smean              20000 non-null  int64  
+ 27  dmean              20000 non-null  int64  
+ 28  trans_depth        20000 non-null  int64  
+ 29  response_body_len  20000 non-null  int64  
+ 30  ct_srv_src         20000 non-null  int64  
+ 31  ct_state_ttl       20000 non-null  int64  
+ 32  ct_dst_ltm         20000 non-null  int64  
+ 33  ct_src_dport_ltm   20000 non-null  int64  
+ 34  ct_dst_sport_ltm   20000 non-null  int64  
+ 35  ct_dst_src_ltm     20000 non-null  int64  
+ 36  is_ftp_login       20000 non-null  int64  
+ 37  ct_ftp_cmd         20000 non-null  int64  
+ 38  ct_flw_http_mthd   20000 non-null  int64  
+ 39  ct_src_ltm         20000 non-null  int64  
+ 40  ct_srv_dst         20000 non-null  int64  
+ 41  is_sm_ips_ports    20000 non-null  int64  
+ 42  label              20000 non-null  int64  
+dtypes: float64(11), int64(29), object(3)
+memory usage: 6.7+ MB
+
+
+=== Statistical Summary (Numeric Columns) ===
+            dur     spkts     dpkts       sbytes  ...  ct_src_ltm  ct_srv_dst  is_sm_ips_ports     label
+count 20,000.00 20,000.00 20,000.00    20,000.00  ...   20,000.00   20,000.00        20,000.00 20,000.00
+mean       1.19     20.32     18.78     9,048.55  ...        6.82        9.14             0.01      0.64
+std        5.76    138.89    110.30   177,415.28  ...        8.49       10.92             0.11      0.48
+min        0.00      1.00      0.00        24.00  ...        1.00        1.00             0.00      0.00
+25%        0.00      2.00      0.00       114.00  ...        2.00        2.00             0.00      0.00
+50%        0.00      4.00      2.00       528.00  ...        3.00        4.00             0.00      1.00
+75%        0.68     12.00     10.00     1,366.00  ...        8.00       11.00             0.00      1.00
+max       60.00  6,974.00  6,088.00 9,185,934.00  ...       60.00       62.00             1.00      1.00
+
+[8 rows x 40 columns]
+
+=== Statistical Summary (Object Columns) ===
+        proto service  state
+count   20000   20000  20000
+unique    132      12      7
+top       tcp       -    FIN
+freq     9604   10977   9144
+
+=== Missing Values per Column (Showing > 0) ===
+No missing values found.
+
+=== Target Variable ('label') Distribution ===
+Value Counts:
+label
+1    12710
+0     7290
+Name: count, dtype: int64
+
+Normalized:
+label
+1    0.6355
+0    0.3645
+Name: proportion, dtype: float64
+
+--- Identifying Features and Target ---
+Target column: 'label'
+Identified 42 features.
+  - 39 numeric features.
+  - 3 categorical features.
+
+--- Advanced Exploratory Data Analysis (EDA) ---
+
+=== Feature Type Summary (UNSW) ===
+Number of numeric features identified: 39
+Number of categorical features identified: 3
+
+Calculating correlations for numeric features...
+
+=== Features to drop based on correlation threshold > 0.9 ===
+Identified 14 features to drop: ['sbytes', 'dbytes', 'sloss', 'dloss', 'dwin', 'synack', 'ackdat', 'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'ct_dst_src_ltm', 'ct_ftp_cmd', 'ct_src_ltm', 'ct_srv_dst', 'is_sm_ips_ports']
+
+=== High Correlation Summary (Absolute > 0.8) for Information ===
+ct_ftp_cmd        is_ftp_login       0.998
+dbytes            dloss              0.997
+sloss             sbytes             0.995
+swin              dwin               0.980
+dpkts             dloss              0.979
+ct_srv_src        ct_srv_dst         0.979
+sloss             spkts              0.974
+dpkts             dbytes             0.972
+ct_dst_ltm        ct_src_dport_ltm   0.965
+sbytes            spkts              0.965
+ct_srv_dst        ct_dst_src_ltm     0.961
+ct_srv_src        ct_dst_src_ltm     0.954
+synack            tcprtt             0.945
+is_sm_ips_ports   sinpkt             0.945
+tcprtt            ackdat             0.934
+ct_src_dport_ltm  ct_src_ltm         0.911
+                  ct_dst_sport_ltm   0.908
+ct_dst_ltm        ct_src_ltm         0.905
+ct_src_dport_ltm  ct_dst_src_ltm     0.874
+ct_dst_ltm        ct_dst_sport_ltm   0.874
+ct_srv_dst        ct_src_dport_ltm   0.869
+ct_srv_src        ct_src_dport_ltm   0.864
+ct_dst_src_ltm    ct_dst_ltm         0.860
+ct_dst_ltm        ct_srv_dst         0.857
+ct_srv_src        ct_dst_ltm         0.845
+ct_dst_sport_ltm  ct_dst_src_ltm     0.840
+ct_srv_dst        ct_dst_sport_ltm   0.827
+ct_src_ltm        ct_dst_sport_ltm   0.819
+ct_dst_sport_ltm  ct_srv_src         0.819
+ct_dst_src_ltm    ct_src_ltm         0.803
+
+--- Splitting Data (unsw_orig) (80% Train, 20% Test) ---
+X_train shape: (16000, 42), y_train shape: (16000,)
+X_test shape: (4000, 42), y_test shape: (4000,)
+Data split successfully.
+
+Fitting UNSCALED preprocessor (unsw_orig)...
+Unscaled preprocessor fitted.
+
+Fitting SCALED preprocessor (unsw_orig)...
+Scaled preprocessor fitted.
+
+========================================
+ Model Training: UNSCALED Data (unsw_orig) - RF Only
+========================================
+
+--- Training and Evaluating Base RandomForestClassifier (UNSW_ORIG_UNSCALED) ---
+Fitting Base RandomForest pipeline...
+Base RandomForest fitting completed in 1.02 seconds.
+
+--- Evaluating Base RandomForest Model on Test Set ---
+Prediction completed in 0.03 seconds.
+Accuracy: 0.9317
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.92      0.90      0.91      1458
+           1       0.94      0.95      0.95      2542
+
+    accuracy                           0.93      4000
+   macro avg       0.93      0.92      0.93      4000
+weighted avg       0.93      0.93      0.93      4000
+
+
+Confusion Matrix:
+[[1306  152]
+ [ 121 2421]]
+ROC AUC Score: 0.9868
+
+--- Training and Evaluating RandomForestClassifier (UNSW_ORIG_UNSCALED) ---
+Running GridSearchCV with 3 folds...
+Fitting 3 folds for each of 24 candidates, totalling 72 fits
+GridSearchCV completed in 10.95 seconds.
+
+Best Parameters Found (RandomForest): {'classifier__max_depth': None, 'classifier__min_samples_leaf': 1, 'classifier__min_samples_split': 5, 'classifier__n_estimators': 100}
+Best Cross-validation Accuracy (RandomForest): 0.9346
+
+--- Evaluating Tuned RandomForest Model on Test Set ---
+Prediction completed in 0.03 seconds.
+Accuracy: 0.9350
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.91      0.91      0.91      1458
+           1       0.95      0.95      0.95      2542
+
+    accuracy                           0.94      4000
+   macro avg       0.93      0.93      0.93      4000
+weighted avg       0.93      0.94      0.93      4000
+
+
+Confusion Matrix:
+[[1323  135]
+ [ 125 2417]]
+ROC AUC Score: 0.9873
+
+Best Tuned RandomForest model saved to: ./unsw_analysis_results_final_v1/tuned_rf_model_unsw_orig_unscaled.pkl
+Saved model size: 11.763 MB
+
+========================================
+ Model Training: SCALED Data (unsw_orig)
+========================================
+
+--- Training and Evaluating Base RandomForestClassifier (UNSW_ORIG_SCALED) ---
+Fitting Base RandomForest pipeline...
+Base RandomForest fitting completed in 1.02 seconds.
+
+--- Evaluating Base RandomForest Model on Test Set ---
+Prediction completed in 0.03 seconds.
+Accuracy: 0.9347
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.92      0.90      0.91      1458
+           1       0.95      0.95      0.95      2542
+
+    accuracy                           0.93      4000
+   macro avg       0.93      0.93      0.93      4000
+weighted avg       0.93      0.93      0.93      4000
+
+
+Confusion Matrix:
+[[1318  140]
+ [ 121 2421]]
+ROC AUC Score: 0.9871
+
+--- Training and Evaluating RandomForestClassifier (UNSW_ORIG_SCALED) ---
+Running GridSearchCV with 3 folds...
+Fitting 3 folds for each of 24 candidates, totalling 72 fits
+GridSearchCV completed in 9.93 seconds.
+
+Best Parameters Found (RandomForest): {'classifier__max_depth': None, 'classifier__min_samples_leaf': 1, 'classifier__min_samples_split': 2, 'classifier__n_estimators': 100}
+Best Cross-validation Accuracy (RandomForest): 0.9339
+
+--- Evaluating Tuned RandomForest Model on Test Set ---
+Prediction completed in 0.03 seconds.
+Accuracy: 0.9347
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.92      0.90      0.91      1458
+           1       0.95      0.95      0.95      2542
+
+    accuracy                           0.93      4000
+   macro avg       0.93      0.93      0.93      4000
+weighted avg       0.93      0.93      0.93      4000
+
+
+Confusion Matrix:
+[[1318  140]
+ [ 121 2421]]
+ROC AUC Score: 0.9871
+
+Best Tuned RandomForest model saved to: ./unsw_analysis_results_final_v1/tuned_rf_model_unsw_orig_scaled.pkl
+Saved model size: 16.313 MB
+
+--- Tuning PCA Components + Evaluating PCA + Base RandomForestClassifier (UNSW_ORIG_SCALED) ---
+
+Tuning PCA n_components in range: [5, 10, 15, 20]...
+  Testing PCA with n_components=5...
+    n=5: Accuracy=0.8945, Fit Time=1.99s, Pred Time=0.03s
+  Testing PCA with n_components=10...
+    n=10: Accuracy=0.9008, Fit Time=3.08s, Pred Time=0.03s
+  Testing PCA with n_components=15...
+    n=15: Accuracy=0.9055, Fit Time=2.89s, Pred Time=0.03s
+  Testing PCA with n_components=20...
+    n=20: Accuracy=0.9103, Fit Time=3.79s, Pred Time=0.03s
+
+--- Best PCA Configuration Found ---
+Best n_components: 20
+Best Accuracy: 0.9103
+
+PCA Tuning Results Summary:
+   n_components  accuracy  fit_time  pred_time
+3            20   0.91025  3.791565   0.031281
+2            15   0.90550  2.894839   0.032813
+1            10   0.90075  3.078385   0.032207
+0             5   0.89450  1.987446   0.030565
+
+--- Evaluating Best PCA (n=20) + RandomForest Model on Test Set ---
+Prediction time for best model: 0.03s
+Accuracy (already calculated): 0.9103
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.90      0.85      0.87      1458
+           1       0.91      0.95      0.93      2542
+
+    accuracy                           0.91      4000
+   macro avg       0.91      0.90      0.90      4000
+weighted avg       0.91      0.91      0.91      4000
+
+
+Confusion Matrix:
+[[1233  225]
+ [ 134 2408]]
+ROC AUC Score: 0.9781
+
+--- Training and Evaluating ANN + SMOTE (UNSW_ORIG_SCALED) ---
+Preprocessing data for ANN...
+Input dimension for ANN: 190
+Applying SMOTE to the training data...
+Shape before SMOTE: (16000, 190), Class distribution: [ 5832 10168]
+SMOTE completed in 0.10 seconds.
+Shape after SMOTE: (20336, 190), Class distribution: [10168 10168]
+
+ANN Model Summary:
+Model: "sequential"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ dense (Dense)                        │ (None, 64)                  │          12,224 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout (Dropout)                    │ (None, 64)                  │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_1 (Dense)                      │ (None, 32)                  │           2,080 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout_1 (Dropout)                  │ (None, 32)                  │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_2 (Dense)                      │ (None, 1)                   │              33 │
+└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘
+ Total params: 14,337 (56.00 KB)
+ Trainable params: 14,337 (56.00 KB)
+ Non-trainable params: 0 (0.00 B)
+
+
+Training ANN model...
+Epoch 1/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4:40[0m 1s/step - accuracy: 0.5781 - loss: 0.6844[1m 61/255[0m [32m━━━━[0m[37m━━━━━━━━━━━━━━━━[0m [1m0s[0m 837us/step - accuracy: 0.6986 - loss: 0.5895[1m 87/255[0m [32m━━━━━━[0m[37m━━━━━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.7223 - loss: 0.5588  [1m112/255[0m [32m━━━━━━━━[0m[37m━━━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.7384 - loss: 0.5353[1m133/255[0m [32m━━━━━━━━━━[0m[37m━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.7492 - loss: 0.5186[1m151/255[0m [32m━━━━━━━━━━━[0m[37m━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.7571 - loss: 0.5058[1m167/255[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.7633 - loss: 0.4955[1m183/255[0m [32m━━━━━━━━━━━━━━[0m[37m━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.7687 - loss: 0.4862[1m206/255[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.7754 - loss: 0.4744[1m222/255[0m [32m━━━━━━━━━━━━━━━━━[0m[37m━━━[0m [1m0s[0m 2ms/step - accuracy: 0.7795 - loss: 0.4669[1m252/255[0m [32m━━━━━━━━━━━━━━━━━━━[0m[37m━[0m [1m0s[0m 2ms/step - accuracy: 0.7865 - loss: 0.4540[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 4ms/step - accuracy: 0.7871 - loss: 0.4528[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m3s[0m 8ms/step - accuracy: 0.7874 - loss: 0.4524 - val_accuracy: 0.7338 - val_loss: 0.3800
+Epoch 2/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 17ms/step - accuracy: 0.8125 - loss: 0.3420[1m 72/255[0m [32m━━━━━[0m[37m━━━━━━━━━━━━━━━[0m [1m0s[0m 705us/step - accuracy: 0.8842 - loss: 0.2475[1m141/255[0m [32m━━━━━━━━━━━[0m[37m━━━━━━━━━[0m [1m0s[0m 716us/step - accuracy: 0.8849 - loss: 0.2437[1m215/255[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 702us/step - accuracy: 0.8864 - loss: 0.2395[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 1ms/step - accuracy: 0.8871 - loss: 0.2376 - val_accuracy: 0.7756 - val_loss: 0.2921
+Epoch 3/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 18ms/step - accuracy: 0.9219 - loss: 0.1674[1m 59/255[0m [32m━━━━[0m[37m━━━━━━━━━━━━━━━━[0m [1m0s[0m 862us/step - accuracy: 0.9005 - loss: 0.1978[1m104/255[0m [32m━━━━━━━━[0m[37m━━━━━━━━━━━━[0m [1m0s[0m 988us/step - accuracy: 0.9008 - loss: 0.1990[1m121/255[0m [32m━━━━━━━━━[0m[37m━━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9007 - loss: 0.1994  [1m138/255[0m [32m━━━━━━━━━━[0m[37m━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9005 - loss: 0.1997[1m154/255[0m [32m━━━━━━━━━━━━[0m[37m━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9004 - loss: 0.1998[1m173/255[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9002 - loss: 0.2000[1m190/255[0m [32m━━━━━━━━━━━━━━[0m[37m━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9000 - loss: 0.2001[1m207/255[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.8998 - loss: 0.2004[1m232/255[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 2ms/step - accuracy: 0.8996 - loss: 0.2007[1m248/255[0m [32m━━━━━━━━━━━━━━━━━━━[0m[37m━[0m [1m0s[0m 2ms/step - accuracy: 0.8996 - loss: 0.2007[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m1s[0m 2ms/step - accuracy: 0.8996 - loss: 0.2006 - val_accuracy: 0.8001 - val_loss: 0.2884
+Epoch 4/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 19ms/step - accuracy: 0.9062 - loss: 0.1442[1m 72/255[0m [32m━━━━━[0m[37m━━━━━━━━━━━━━━━[0m [1m0s[0m 722us/step - accuracy: 0.9006 - loss: 0.1837[1m109/255[0m [32m━━━━━━━━[0m[37m━━━━━━━━━━━━[0m [1m0s[0m 940us/step - accuracy: 0.9004 - loss: 0.1841[1m143/255[0m [32m━━━━━━━━━━━[0m[37m━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9004 - loss: 0.1850  [1m219/255[0m [32m━━━━━━━━━━━━━━━━━[0m[37m━━━[0m [1m0s[0m 927us/step - accuracy: 0.9003 - loss: 0.1862[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 1ms/step - accuracy: 0.9006 - loss: 0.1862 - val_accuracy: 0.8663 - val_loss: 0.2470
+Epoch 5/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 17ms/step - accuracy: 0.8906 - loss: 0.2372[1m 47/255[0m [32m━━━[0m[37m━━━━━━━━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9062 - loss: 0.1842 [1m 74/255[0m [32m━━━━━[0m[37m━━━━━━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9048 - loss: 0.1828[1m 95/255[0m [32m━━━━━━━[0m[37m━━━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9045 - loss: 0.1819[1m129/255[0m [32m━━━━━━━━━━[0m[37m━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9049 - loss: 0.1807[1m173/255[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9050 - loss: 0.1804[1m192/255[0m [32m━━━━━━━━━━━━━━━[0m[37m━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9051 - loss: 0.1802[1m218/255[0m [32m━━━━━━━━━━━━━━━━━[0m[37m━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9053 - loss: 0.1799[1m240/255[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 2ms/step - accuracy: 0.9055 - loss: 0.1797[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m1s[0m 2ms/step - accuracy: 0.9055 - loss: 0.1796 - val_accuracy: 0.9110 - val_loss: 0.2017
+Epoch 6/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m5s[0m 20ms/step - accuracy: 0.9219 - loss: 0.1450[1m 48/255[0m [32m━━━[0m[37m━━━━━━━━━━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9048 - loss: 0.1743 [1m 64/255[0m [32m━━━━━[0m[37m━━━━━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9037 - loss: 0.1763[1m 83/255[0m [32m━━━━━━[0m[37m━━━━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9035 - loss: 0.1776[1m127/255[0m [32m━━━━━━━━━[0m[37m━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9037 - loss: 0.1789[1m207/255[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9050 - loss: 0.1782[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 1ms/step - accuracy: 0.9054 - loss: 0.1781 - val_accuracy: 0.8670 - val_loss: 0.2314
+Epoch 7/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 19ms/step - accuracy: 0.8750 - loss: 0.2179[1m 80/255[0m [32m━━━━━━[0m[37m━━━━━━━━━━━━━━[0m [1m0s[0m 636us/step - accuracy: 0.9114 - loss: 0.1760[1m161/255[0m [32m━━━━━━━━━━━━[0m[37m━━━━━━━━[0m [1m0s[0m 628us/step - accuracy: 0.9113 - loss: 0.1740[1m240/255[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 632us/step - accuracy: 0.9112 - loss: 0.1724[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 994us/step - accuracy: 0.9111 - loss: 0.1722 - val_accuracy: 0.8437 - val_loss: 0.2424
+Epoch 8/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 17ms/step - accuracy: 0.9531 - loss: 0.1456[1m 80/255[0m [32m━━━━━━[0m[37m━━━━━━━━━━━━━━[0m [1m0s[0m 636us/step - accuracy: 0.9210 - loss: 0.1566[1m162/255[0m [32m━━━━━━━━━━━━[0m[37m━━━━━━━━[0m [1m0s[0m 624us/step - accuracy: 0.9161 - loss: 0.1641[1m245/255[0m [32m━━━━━━━━━━━━━━━━━━━[0m[37m━[0m [1m0s[0m 617us/step - accuracy: 0.9143 - loss: 0.1670[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 937us/step - accuracy: 0.9142 - loss: 0.1672 - val_accuracy: 0.8736 - val_loss: 0.2313
+Epoch 9/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 20ms/step - accuracy: 0.9531 - loss: 0.1020[1m 82/255[0m [32m━━━━━━[0m[37m━━━━━━━━━━━━━━[0m [1m0s[0m 621us/step - accuracy: 0.9160 - loss: 0.1593[1m158/255[0m [32m━━━━━━━━━━━━[0m[37m━━━━━━━━[0m [1m0s[0m 641us/step - accuracy: 0.9131 - loss: 0.1624[1m211/255[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 721us/step - accuracy: 0.9125 - loss: 0.1636[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 1ms/step - accuracy: 0.9121 - loss: 0.1644 - val_accuracy: 0.8717 - val_loss: 0.2191
+Epoch 10/30
+[1m  1/255[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m6s[0m 25ms/step - accuracy: 0.9219 - loss: 0.1360[1m 24/255[0m [32m━[0m[37m━━━━━━━━━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9300 - loss: 0.1473 [1m 46/255[0m [32m━━━[0m[37m━━━━━━━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9273 - loss: 0.1495[1m 97/255[0m [32m━━━━━━━[0m[37m━━━━━━━━━━━━━[0m [1m0s[0m 2ms/step - accuracy: 0.9227 - loss: 0.1535[1m154/255[0m [32m━━━━━━━━━━━━[0m[37m━━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9202 - loss: 0.1569[1m188/255[0m [32m━━━━━━━━━━━━━━[0m[37m━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9192 - loss: 0.1583[1m208/255[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9188 - loss: 0.1589[1m230/255[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 2ms/step - accuracy: 0.9184 - loss: 0.1596[1m255/255[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m1s[0m 2ms/step - accuracy: 0.9180 - loss: 0.1602 - val_accuracy: 0.8818 - val_loss: 0.2183
+Epoch 10: early stopping
+Restoring model weights from the end of the best epoch: 5.
+ANN training completed in 6.75 seconds.
+
+--- Evaluating ANN + SMOTE Model on Test Set ---
+[1m  1/125[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m50s[0m 405ms/step[1m125/125[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 473us/step 
+Prediction completed in 0.52 seconds.
+Accuracy: 0.9070
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.85      0.90      0.88      1458
+           1       0.94      0.91      0.93      2542
+
+    accuracy                           0.91      4000
+   macro avg       0.90      0.91      0.90      4000
+weighted avg       0.91      0.91      0.91      4000
+
+
+Confusion Matrix:
+[[1312  146]
+ [ 226 2316]]
+
+ANN model saved to: ./unsw_analysis_results_final_v1/ann_smote_model_unsw_orig_scaled.keras
+Saved model size: 0.192 MB
+
+--- Running Fuzzy C-Means Clustering (UNSW_ORIG_SCALED) ---
+Preprocessing numeric data for FCM...
+Scaled numeric data shape for FCM: (20000, 39)
+
+--- Running Base Fuzzy C-Means (n=2, m=2.0) ---
+Base FCM clustering completed in 0.10 seconds.
+
+=== Base Fuzzy C-Means Results ===
+Accuracy: 0.6747
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.54      0.70      0.61      7290
+           1       0.79      0.66      0.72     12710
+
+    accuracy                           0.67     20000
+   macro avg       0.67      0.68      0.67     20000
+weighted avg       0.70      0.67      0.68     20000
+
+Confusion Matrix:
+[[5100 2190]
+ [4316 8394]]
+Silhouette Score: 0.2956
+
+--- Running Tuned Fuzzy C-Means ---
+
+Tuning FCM parameters (n_clusters, m)...
+  Trying n_clusters=2, m=1.5...
+    FCM iteration took 0.08 seconds.
+    Accuracy: 0.6747, Silhouette: 0.2956, FPC: 0.7979
+  Trying n_clusters=2, m=2.0...
+    FCM iteration took 0.10 seconds.
+    Accuracy: 0.6747, Silhouette: 0.2956, FPC: 0.6262
+  Trying n_clusters=2, m=2.5...
+    FCM iteration took 0.14 seconds.
+    Accuracy: 0.6747, Silhouette: 0.2956, FPC: 0.5541
+  Trying n_clusters=3, m=1.5...
+    FCM iteration took 0.13 seconds.
+    Accuracy: 0.6703, Silhouette: 0.2847, FPC: 0.7624
+  Trying n_clusters=3, m=2.0...
+    FCM iteration took 0.20 seconds.
+    Accuracy: 0.6700, Silhouette: 0.2835, FPC: 0.5513
+  Trying n_clusters=3, m=2.5...
+    FCM iteration took 0.37 seconds.
+    Accuracy: 0.6712, Silhouette: 0.2811, FPC: 0.4339
+  Trying n_clusters=4, m=1.5...
+    FCM iteration took 0.12 seconds.
+    Accuracy: 0.7796, Silhouette: 0.3274, FPC: 0.7269
+  Trying n_clusters=4, m=2.0...
+    FCM iteration took 0.16 seconds.
+    Accuracy: 0.7706, Silhouette: 0.3246, FPC: 0.4898
+  Trying n_clusters=4, m=2.5...
+    FCM iteration took 0.48 seconds.
+    Accuracy: 0.7692, Silhouette: 0.3236, FPC: 0.3674
+
+--- Best Fuzzy C-Means Results (from Tuning) ---
+Best Parameters Found: n_clusters=4, m=1.5
+Best Accuracy (from tuning evaluation): 0.7796
+
+Classification Report (Best FCM):
+              precision    recall  f1-score   support
+
+           0       0.91      0.44      0.59      7290
+           1       0.75      0.97      0.85     12710
+
+    accuracy                           0.78     20000
+   macro avg       0.83      0.71      0.72     20000
+weighted avg       0.81      0.78      0.76     20000
+
+
+Confusion Matrix:
+[[ 3210  4080]
+ [  327 12383]]
+Silhouette Score (Best): 0.3274
+
+FCM Tuning Results Summary:
+   n_clusters    m  accuracy  silhouette       fpc
+6           4  1.5   0.77965    0.327403  0.726914
+7           4  2.0   0.77065    0.324641  0.489816
+8           4  2.5   0.76925    0.323604  0.367450
+2           2  2.5   0.67475    0.295600  0.554129
+0           2  1.5   0.67470    0.295589  0.797916
+1           2  2.0   0.67470    0.295604  0.626177
+5           3  2.5   0.67115    0.281094  0.433861
+3           3  1.5   0.67025    0.284668  0.762406
+4           3  2.0   0.66995    0.283476  0.551266
+
+Re-running FCM with best params (n=4, m=1.5) to get centers...
+Best Tuned Fuzzy C-Means centers saved to: ./unsw_analysis_results_final_v1/tuned_fcm_centers_unsw_orig_scaled_n4_m1.5.pkl
+Saved centers file size: 0.001335 MB
+
+--- SHAP Analysis (Based on Tuned SCALED RF - unsw_orig) ---
+
+--- Running SHAP Analysis (UNSW_ORIG_SCALED) ---
+Preprocessing test data for SHAP...
+Shape of data transformed for SHAP: (4000, 190)
+Number of features for SHAP: 190
+Creating SHAP TreeExplainer...
+Calculating SHAP values for 100 samples...
+SHAP calculation took 5.36 seconds.
+SHAP values format: Single array (samples, features, classes).
+
+=== Mean Absolute SHAP Values (Feature Importance) ===
+sttl             8.805062e-02
+ct_state_ttl     4.425167e-02
+dttl             2.308340e-02
+sload            1.984829e-02
+dbytes           1.848201e-02
+                     ...     
+proto_cftp       4.313277e-20
+proto_sat-mon    0.000000e+00
+proto_aris       0.000000e+00
+proto_xns-idp    0.000000e+00
+proto_vines      0.000000e+00
+Length: 190, dtype: float64
+
+=== Top 10 Most Important Features (SHAP) ===
+sttl            0.088051
+ct_state_ttl    0.044252
+dttl            0.023083
+sload           0.019848
+dbytes          0.018482
+smean           0.018397
+sloss           0.018162
+proto_tcp       0.017833
+rate            0.017794
+ct_srv_dst      0.017396
+dtype: float64
+
+Generating SHAP Summary Plot (UNSW_ORIG_SCALED) (Class 1)...
+
+========================================
+ Model Training: Correlation Selected Features, SCALED (unsw_orig)
+ (Threshold > 0.9)
+========================================
+
+Dropping 14 features based on initial correlation analysis...
+X_train_selected shape: (16000, 28)
+X_test_selected shape: (4000, 28)
+
+Fitting new SCALED preprocessor for selected features...
+Scaled preprocessor for selected features fitted.
+
+--- Training and Evaluating Base RandomForestClassifier (UNSW_ORIG_SEL_SCALED) ---
+Fitting Base RandomForest pipeline...
+Base RandomForest fitting completed in 0.97 seconds.
+
+--- Evaluating Base RandomForest Model on Test Set ---
+Prediction completed in 0.03 seconds.
+Accuracy: 0.9255
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.91      0.88      0.90      1458
+           1       0.93      0.95      0.94      2542
+
+    accuracy                           0.93      4000
+   macro avg       0.92      0.92      0.92      4000
+weighted avg       0.93      0.93      0.93      4000
+
+
+Confusion Matrix:
+[[1288  170]
+ [ 128 2414]]
+ROC AUC Score: 0.9840
+
+--- Training and Evaluating RandomForestClassifier (UNSW_ORIG_SEL_SCALED) ---
+Running GridSearchCV with 3 folds...
+Fitting 3 folds for each of 24 candidates, totalling 72 fits
+GridSearchCV completed in 9.18 seconds.
+
+Best Parameters Found (RandomForest): {'classifier__max_depth': None, 'classifier__min_samples_leaf': 3, 'classifier__min_samples_split': 2, 'classifier__n_estimators': 100}
+Best Cross-validation Accuracy (RandomForest): 0.9247
+
+--- Evaluating Tuned RandomForest Model on Test Set ---
+Prediction completed in 0.02 seconds.
+Accuracy: 0.9270
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.89      0.91      0.90      1458
+           1       0.95      0.94      0.94      2542
+
+    accuracy                           0.93      4000
+   macro avg       0.92      0.92      0.92      4000
+weighted avg       0.93      0.93      0.93      4000
+
+
+Confusion Matrix:
+[[1330  128]
+ [ 164 2378]]
+ROC AUC Score: 0.9847
+
+Best Tuned RandomForest model saved to: ./unsw_analysis_results_final_v1/tuned_rf_model_unsw_orig_sel_scaled.pkl
+Saved model size: 5.976 MB
+
+--- Removing Outliers using IQR (Factor=1.5) ---
+Identifying outliers in numeric features...
+Identified 15480 rows with outliers across numeric features.
+Removed 15480 rows containing outliers.
+Dataset shape after outlier removal: (4520, 43)
+
+############################################################
+ RUNNING ANALYSIS: AFTER OUTLIER REMOVAL
+############################################################
+
+--- Basic Exploratory Data Analysis (EDA) ---
+
+=== Dataset Info ===
+<class 'pandas.core.frame.DataFrame'>
+Index: 4520 entries, 137118 to 168384
+Data columns (total 43 columns):
+ #   Column             Non-Null Count  Dtype  
+---  ------             --------------  -----  
+ 0   dur                4520 non-null   float64
+ 1   proto              4520 non-null   object 
+ 2   service            4520 non-null   object 
+ 3   state              4520 non-null   object 
+ 4   spkts              4520 non-null   int64  
+ 5   dpkts              4520 non-null   int64  
+ 6   sbytes             4520 non-null   int64  
+ 7   dbytes             4520 non-null   int64  
+ 8   rate               4520 non-null   float64
+ 9   sttl               4520 non-null   int64  
+ 10  dttl               4520 non-null   int64  
+ 11  sload              4520 non-null   float64
+ 12  dload              4520 non-null   float64
+ 13  sloss              4520 non-null   int64  
+ 14  dloss              4520 non-null   int64  
+ 15  sinpkt             4520 non-null   float64
+ 16  dinpkt             4520 non-null   float64
+ 17  sjit               4520 non-null   float64
+ 18  djit               4520 non-null   float64
+ 19  swin               4520 non-null   int64  
+ 20  stcpb              4520 non-null   int64  
+ 21  dtcpb              4520 non-null   int64  
+ 22  dwin               4520 non-null   int64  
+ 23  tcprtt             4520 non-null   float64
+ 24  synack             4520 non-null   float64
+ 25  ackdat             4520 non-null   float64
+ 26  smean              4520 non-null   int64  
+ 27  dmean              4520 non-null   int64  
+ 28  trans_depth        4520 non-null   int64  
+ 29  response_body_len  4520 non-null   int64  
+ 30  ct_srv_src         4520 non-null   int64  
+ 31  ct_state_ttl       4520 non-null   int64  
+ 32  ct_dst_ltm         4520 non-null   int64  
+ 33  ct_src_dport_ltm   4520 non-null   int64  
+ 34  ct_dst_sport_ltm   4520 non-null   int64  
+ 35  ct_dst_src_ltm     4520 non-null   int64  
+ 36  is_ftp_login       4520 non-null   int64  
+ 37  ct_ftp_cmd         4520 non-null   int64  
+ 38  ct_flw_http_mthd   4520 non-null   int64  
+ 39  ct_src_ltm         4520 non-null   int64  
+ 40  ct_srv_dst         4520 non-null   int64  
+ 41  is_sm_ips_ports    4520 non-null   int64  
+ 42  label              4520 non-null   int64  
+dtypes: float64(11), int64(29), object(3)
+memory usage: 1.5+ MB
+
+
+=== Statistical Summary (Numeric Columns) ===
+           dur    spkts    dpkts   sbytes  ...  ct_src_ltm  ct_srv_dst  is_sm_ips_ports    label
+count 4,520.00 4,520.00 4,520.00 4,520.00  ...    4,520.00    4,520.00         4,520.00 4,520.00
+mean      0.19     4.79     2.54   370.81  ...        3.19        5.49             0.00     0.82
+std       0.31     4.29     3.97   354.10  ...        2.63        4.00             0.00     0.39
+min       0.00     1.00     0.00    24.00  ...        1.00        1.00             0.00     0.00
+25%       0.00     2.00     0.00   168.00  ...        1.00        2.00             0.00     1.00
+50%       0.00     2.00     0.00   200.00  ...        2.00        5.00             0.00     1.00
+75%       0.37    10.00     6.00   546.00  ...        4.00        7.00             0.00     1.00
+max       1.58    22.00    18.00 2,858.00  ...       17.00       23.00             0.00     1.00
+
+[8 rows x 40 columns]
+
+=== Statistical Summary (Object Columns) ===
+       proto service state
+count   4520    4520  4520
+unique   123       9     4
+top      tcp       -   INT
+freq    1393    3818  3011
+
+=== Missing Values per Column (Showing > 0) ===
+No missing values found.
+
+=== Target Variable ('label') Distribution ===
+Value Counts:
+label
+1    3702
+0     818
+Name: count, dtype: int64
+
+Normalized:
+label
+1    0.819027
+0    0.180973
+Name: proportion, dtype: float64
+
+--- Identifying Features and Target ---
+Target column: 'label'
+Identified 42 features.
+  - 39 numeric features.
+  - 3 categorical features.
+
+--- Splitting Data (unsw_no_outliers) (80% Train, 20% Test) ---
+X_train shape: (3616, 42), y_train shape: (3616,)
+X_test shape: (904, 42), y_test shape: (904,)
+Data split successfully.
+
+Fitting UNSCALED preprocessor (unsw_no_outliers)...
+Unscaled preprocessor fitted.
+
+Fitting SCALED preprocessor (unsw_no_outliers)...
+Scaled preprocessor fitted.
+
+========================================
+ Model Training: UNSCALED Data (unsw_no_outliers) - RF Only
+========================================
+
+--- Training and Evaluating Base RandomForestClassifier (UNSW_NO_OUTLIERS_UNSCALED) ---
+Fitting Base RandomForest pipeline...
+Base RandomForest fitting completed in 0.23 seconds.
+
+--- Evaluating Base RandomForest Model on Test Set ---
+Prediction completed in 0.01 seconds.
+Accuracy: 0.9093
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.75      0.76      0.75       164
+           1       0.95      0.94      0.94       740
+
+    accuracy                           0.91       904
+   macro avg       0.85      0.85      0.85       904
+weighted avg       0.91      0.91      0.91       904
+
+
+Confusion Matrix:
+[[124  40]
+ [ 42 698]]
+ROC AUC Score: 0.9638
+
+--- Training and Evaluating RandomForestClassifier (UNSW_NO_OUTLIERS_UNSCALED) ---
+Running GridSearchCV with 3 folds...
+Fitting 3 folds for each of 24 candidates, totalling 72 fits
+GridSearchCV completed in 1.92 seconds.
+
+Best Parameters Found (RandomForest): {'classifier__max_depth': None, 'classifier__min_samples_leaf': 1, 'classifier__min_samples_split': 5, 'classifier__n_estimators': 150}
+Best Cross-validation Accuracy (RandomForest): 0.9101
+
+--- Evaluating Tuned RandomForest Model on Test Set ---
+Prediction completed in 0.01 seconds.
+Accuracy: 0.9082
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.72      0.82      0.76       164
+           1       0.96      0.93      0.94       740
+
+    accuracy                           0.91       904
+   macro avg       0.84      0.87      0.85       904
+weighted avg       0.91      0.91      0.91       904
+
+
+Confusion Matrix:
+[[134  30]
+ [ 53 687]]
+ROC AUC Score: 0.9645
+
+Best Tuned RandomForest model saved to: ./unsw_analysis_results_final_v1/tuned_rf_model_unsw_no_outliers_unscaled.pkl
+Saved model size: 5.769 MB
+
+========================================
+ Model Training: SCALED Data (unsw_no_outliers)
+========================================
+
+--- Training and Evaluating Base RandomForestClassifier (UNSW_NO_OUTLIERS_SCALED) ---
+Fitting Base RandomForest pipeline...
+Base RandomForest fitting completed in 0.24 seconds.
+
+--- Evaluating Base RandomForest Model on Test Set ---
+Prediction completed in 0.01 seconds.
+Accuracy: 0.9060
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.74      0.74      0.74       164
+           1       0.94      0.94      0.94       740
+
+    accuracy                           0.91       904
+   macro avg       0.84      0.84      0.84       904
+weighted avg       0.91      0.91      0.91       904
+
+
+Confusion Matrix:
+[[122  42]
+ [ 43 697]]
+ROC AUC Score: 0.9643
+
+--- Training and Evaluating RandomForestClassifier (UNSW_NO_OUTLIERS_SCALED) ---
+Running GridSearchCV with 3 folds...
+Fitting 3 folds for each of 24 candidates, totalling 72 fits
+GridSearchCV completed in 1.93 seconds.
+
+Best Parameters Found (RandomForest): {'classifier__max_depth': 20, 'classifier__min_samples_leaf': 1, 'classifier__min_samples_split': 5, 'classifier__n_estimators': 150}
+Best Cross-validation Accuracy (RandomForest): 0.9110
+
+--- Evaluating Tuned RandomForest Model on Test Set ---
+Prediction completed in 0.01 seconds.
+Accuracy: 0.9104
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.71      0.86      0.78       164
+           1       0.97      0.92      0.94       740
+
+    accuracy                           0.91       904
+   macro avg       0.84      0.89      0.86       904
+weighted avg       0.92      0.91      0.91       904
+
+
+Confusion Matrix:
+[[141  23]
+ [ 58 682]]
+ROC AUC Score: 0.9654
+
+Best Tuned RandomForest model saved to: ./unsw_analysis_results_final_v1/tuned_rf_model_unsw_no_outliers_scaled.pkl
+Saved model size: 5.264 MB
+
+--- Tuning PCA Components + Evaluating PCA + Base RandomForestClassifier (UNSW_NO_OUTLIERS_SCALED) ---
+
+Tuning PCA n_components in range: [5, 10, 15, 20]...
+  Testing PCA with n_components=5...
+    n=5: Accuracy=0.8916, Fit Time=0.37s, Pred Time=0.01s
+  Testing PCA with n_components=10...
+    n=10: Accuracy=0.9126, Fit Time=0.50s, Pred Time=0.01s
+  Testing PCA with n_components=15...
+    n=15: Accuracy=0.8971, Fit Time=0.52s, Pred Time=0.01s
+  Testing PCA with n_components=20...
+    n=20: Accuracy=0.9015, Fit Time=0.66s, Pred Time=0.01s
+
+--- Best PCA Configuration Found ---
+Best n_components: 10
+Best Accuracy: 0.9126
+
+PCA Tuning Results Summary:
+   n_components  accuracy  fit_time  pred_time
+1            10  0.912611  0.497963   0.009473
+3            20  0.901549  0.664499   0.009605
+2            15  0.897124  0.521983   0.009863
+0             5  0.891593  0.374882   0.009678
+
+--- Evaluating Best PCA (n=10) + RandomForest Model on Test Set ---
+Prediction time for best model: 0.01s
+Accuracy (already calculated): 0.9126
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.78      0.72      0.75       164
+           1       0.94      0.96      0.95       740
+
+    accuracy                           0.91       904
+   macro avg       0.86      0.84      0.85       904
+weighted avg       0.91      0.91      0.91       904
+
+
+Confusion Matrix:
+[[118  46]
+ [ 33 707]]
+ROC AUC Score: 0.9570
+
+--- Training and Evaluating ANN + SMOTE (UNSW_NO_OUTLIERS_SCALED) ---
+Preprocessing data for ANN...
+Input dimension for ANN: 175
+Applying SMOTE to the training data...
+Shape before SMOTE: (3616, 175), Class distribution: [ 654 2962]
+SMOTE completed in 0.01 seconds.
+Shape after SMOTE: (5924, 175), Class distribution: [2962 2962]
+
+ANN Model Summary:
+Model: "sequential_1"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Layer (type)                         ┃ Output Shape                ┃         Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ dense_3 (Dense)                      │ (None, 64)                  │          11,264 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout_2 (Dropout)                  │ (None, 64)                  │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_4 (Dense)                      │ (None, 32)                  │           2,080 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dropout_3 (Dropout)                  │ (None, 32)                  │               0 │
+├──────────────────────────────────────┼─────────────────────────────┼─────────────────┤
+│ dense_5 (Dense)                      │ (None, 1)                   │              33 │
+└──────────────────────────────────────┴─────────────────────────────┴─────────────────┘
+ Total params: 13,377 (52.25 KB)
+ Trainable params: 13,377 (52.25 KB)
+ Non-trainable params: 0 (0.00 B)
+
+
+Training ANN model...
+Epoch 1/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1:11[0m 967ms/step - accuracy: 0.4375 - loss: 0.7996[1m17/75[0m [32m━━━━[0m[37m━━━━━━━━━━━━━━━━[0m [1m0s[0m 3ms/step - accuracy: 0.5704 - loss: 0.6975    [1m33/75[0m [32m━━━━━━━━[0m[37m━━━━━━━━━━━━[0m [1m0s[0m 3ms/step - accuracy: 0.6249 - loss: 0.6526[1m49/75[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 3ms/step - accuracy: 0.6555 - loss: 0.6215[1m65/75[0m [32m━━━━━━━━━━━━━━━━━[0m[37m━━━[0m [1m0s[0m 3ms/step - accuracy: 0.6756 - loss: 0.5980[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 18ms/step - accuracy: 0.6850 - loss: 0.5859[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m3s[0m 28ms/step - accuracy: 0.6858 - loss: 0.5848 - val_accuracy: 0.7916 - val_loss: 0.4590
+Epoch 2/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 29ms/step - accuracy: 0.8438 - loss: 0.4117[1m49/75[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.8288 - loss: 0.3711 [1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.8299 - loss: 0.3669 - val_accuracy: 0.9181 - val_loss: 0.3715
+Epoch 3/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 27ms/step - accuracy: 0.8281 - loss: 0.3585[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.8670 - loss: 0.3053 - val_accuracy: 0.9333 - val_loss: 0.3055
+Epoch 4/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 29ms/step - accuracy: 0.7500 - loss: 0.4145[1m63/75[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 807us/step - accuracy: 0.8682 - loss: 0.2865[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.8708 - loss: 0.2839 - val_accuracy: 0.9443 - val_loss: 0.2695
+Epoch 5/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 27ms/step - accuracy: 0.9375 - loss: 0.1763[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.8901 - loss: 0.2588 - val_accuracy: 0.9300 - val_loss: 0.3042
+Epoch 6/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 28ms/step - accuracy: 0.9688 - loss: 0.1555[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9055 - loss: 0.2385 - val_accuracy: 0.9418 - val_loss: 0.2775
+Epoch 7/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 27ms/step - accuracy: 0.9062 - loss: 0.2030[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9029 - loss: 0.2307 - val_accuracy: 0.9502 - val_loss: 0.2438
+Epoch 8/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 29ms/step - accuracy: 0.9375 - loss: 0.2120[1m49/75[0m [32m━━━━━━━━━━━━━[0m[37m━━━━━━━[0m [1m0s[0m 1ms/step - accuracy: 0.9114 - loss: 0.2277 [1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9074 - loss: 0.2305 - val_accuracy: 0.9401 - val_loss: 0.2607
+Epoch 9/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 28ms/step - accuracy: 0.8750 - loss: 0.2289[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 679us/step - accuracy: 0.9077 - loss: 0.2195[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9077 - loss: 0.2196 - val_accuracy: 0.9468 - val_loss: 0.2381
+Epoch 10/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 28ms/step - accuracy: 0.8906 - loss: 0.2086[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9117 - loss: 0.2177 - val_accuracy: 0.9426 - val_loss: 0.2491
+Epoch 11/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 24ms/step - accuracy: 0.9531 - loss: 0.1762[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9153 - loss: 0.2136 - val_accuracy: 0.9561 - val_loss: 0.2175
+Epoch 12/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 24ms/step - accuracy: 0.9688 - loss: 0.1251[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9173 - loss: 0.2120 - val_accuracy: 0.9527 - val_loss: 0.2444
+Epoch 13/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 23ms/step - accuracy: 0.9062 - loss: 0.2271[1m54/75[0m [32m━━━━━━━━━━━━━━[0m[37m━━━━━━[0m [1m0s[0m 945us/step - accuracy: 0.9125 - loss: 0.2066[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9127 - loss: 0.2073 - val_accuracy: 0.9595 - val_loss: 0.2058
+Epoch 14/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 22ms/step - accuracy: 0.9062 - loss: 0.2063[1m60/75[0m [32m━━━━━━━━━━━━━━━━[0m[37m━━━━[0m [1m0s[0m 862us/step - accuracy: 0.9023 - loss: 0.2228[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9044 - loss: 0.2199 - val_accuracy: 0.9578 - val_loss: 0.2163
+Epoch 15/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 23ms/step - accuracy: 0.9688 - loss: 0.1599[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9195 - loss: 0.1996 - val_accuracy: 0.9603 - val_loss: 0.2050
+Epoch 16/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 24ms/step - accuracy: 0.9531 - loss: 0.1434[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9166 - loss: 0.2039 - val_accuracy: 0.9654 - val_loss: 0.1957
+Epoch 17/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 26ms/step - accuracy: 0.9219 - loss: 0.1550[1m70/75[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 732us/step - accuracy: 0.9104 - loss: 0.2149[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9109 - loss: 0.2138 - val_accuracy: 0.9586 - val_loss: 0.2012
+Epoch 18/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 27ms/step - accuracy: 0.9219 - loss: 0.1448[1m74/75[0m [32m━━━━━━━━━━━━━━━━━━━[0m[37m━[0m [1m0s[0m 685us/step - accuracy: 0.9113 - loss: 0.2095[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9115 - loss: 0.2094 - val_accuracy: 0.9612 - val_loss: 0.1988
+Epoch 19/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 27ms/step - accuracy: 0.9688 - loss: 0.1690[1m71/75[0m [32m━━━━━━━━━━━━━━━━━━[0m[37m━━[0m [1m0s[0m 734us/step - accuracy: 0.9176 - loss: 0.2058[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9172 - loss: 0.2059 - val_accuracy: 0.9637 - val_loss: 0.2168
+Epoch 20/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m1s[0m 27ms/step - accuracy: 0.9375 - loss: 0.1693[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 681us/step - accuracy: 0.9195 - loss: 0.1927[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9195 - loss: 0.1929 - val_accuracy: 0.9527 - val_loss: 0.2291
+Epoch 21/30
+[1m 1/75[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m2s[0m 29ms/step - accuracy: 0.9531 - loss: 0.1897[1m75/75[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 2ms/step - accuracy: 0.9163 - loss: 0.2015 - val_accuracy: 0.9578 - val_loss: 0.2089
+Epoch 21: early stopping
+Restoring model weights from the end of the best epoch: 16.
+ANN training completed in 6.43 seconds.
+
+--- Evaluating ANN + SMOTE Model on Test Set ---
+[1m 1/29[0m [37m━━━━━━━━━━━━━━━━━━━━[0m [1m4s[0m 149ms/step[1m29/29[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m0s[0m 13ms/step [1m29/29[0m [32m━━━━━━━━━━━━━━━━━━━━[0m[37m[0m [1m1s[0m 13ms/step
+Prediction completed in 0.55 seconds.
+Accuracy: 0.8927
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.64      0.95      0.76       164
+           1       0.99      0.88      0.93       740
+
+    accuracy                           0.89       904
+   macro avg       0.81      0.92      0.85       904
+weighted avg       0.92      0.89      0.90       904
+
+
+Confusion Matrix:
+[[156   8]
+ [ 89 651]]
+
+ANN model saved to: ./unsw_analysis_results_final_v1/ann_smote_model_unsw_no_outliers_scaled.keras
+Saved model size: 0.181 MB
+
+--- Running Fuzzy C-Means Clustering (UNSW_NO_OUTLIERS_SCALED) ---
+Preprocessing numeric data for FCM...
+Scaled numeric data shape for FCM: (4520, 39)
+
+--- Running Base Fuzzy C-Means (n=2, m=2.0) ---
+Base FCM clustering completed in 0.01 seconds.
+
+=== Base Fuzzy C-Means Results ===
+Accuracy: 0.8190
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00       818
+           1       0.82      1.00      0.90      3702
+
+    accuracy                           0.82      4520
+   macro avg       0.41      0.50      0.45      4520
+weighted avg       0.67      0.82      0.74      4520
+
+Confusion Matrix:
+[[   0  818]
+ [   0 3702]]
+Silhouette Score: 0.5488
+
+--- Running Tuned Fuzzy C-Means ---
+
+Tuning FCM parameters (n_clusters, m)...
+  Trying n_clusters=2, m=1.5...
+    FCM iteration took 0.01 seconds.
+    Accuracy: 0.8190, Silhouette: 0.5489, FPC: 0.9486
+  Trying n_clusters=2, m=2.0...
+    FCM iteration took 0.01 seconds.
+    Accuracy: 0.8190, Silhouette: 0.5488, FPC: 0.8173
+  Trying n_clusters=2, m=2.5...
+    FCM iteration took 0.01 seconds.
+    Accuracy: 0.8190, Silhouette: 0.5487, FPC: 0.7070
+  Trying n_clusters=3, m=1.5...
+    FCM iteration took 0.03 seconds.
+    Accuracy: 0.8190, Silhouette: 0.3588, FPC: 0.8319
+  Trying n_clusters=3, m=2.0...
+    FCM iteration took 0.02 seconds.
+    Accuracy: 0.8190, Silhouette: 0.3521, FPC: 0.6176
+  Trying n_clusters=3, m=2.5...
+    FCM iteration took 0.03 seconds.
+    Accuracy: 0.8190, Silhouette: 0.3460, FPC: 0.4866
+  Trying n_clusters=4, m=1.5...
+    FCM iteration took 0.07 seconds.
+    Accuracy: 0.8190, Silhouette: 0.2886, FPC: 0.7282
+  Trying n_clusters=4, m=2.0...
+    FCM iteration took 0.04 seconds.
+    Accuracy: 0.8190, Silhouette: 0.2687, FPC: 0.5178
+  Trying n_clusters=4, m=2.5...
+    FCM iteration took 0.03 seconds.
+    Accuracy: 0.8190, Silhouette: 0.2661, FPC: 0.3969
+
+--- Best Fuzzy C-Means Results (from Tuning) ---
+Best Parameters Found: n_clusters=2, m=1.5
+Best Accuracy (from tuning evaluation): 0.8190
+
+Classification Report (Best FCM):
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00       818
+           1       0.82      1.00      0.90      3702
+
+    accuracy                           0.82      4520
+   macro avg       0.41      0.50      0.45      4520
+weighted avg       0.67      0.82      0.74      4520
+
+
+Confusion Matrix:
+[[   0  818]
+ [   0 3702]]
+Silhouette Score (Best): 0.5489
+
+FCM Tuning Results Summary:
+   n_clusters    m  accuracy  silhouette       fpc
+0           2  1.5  0.819027    0.548876  0.948582
+1           2  2.0  0.819027    0.548822  0.817348
+2           2  2.5  0.819027    0.548694  0.707003
+3           3  1.5  0.819027    0.358802  0.831929
+4           3  2.0  0.819027    0.352124  0.617643
+5           3  2.5  0.819027    0.345957  0.486632
+6           4  1.5  0.819027    0.288643  0.728200
+7           4  2.0  0.819027    0.268660  0.517836
+8           4  2.5  0.819027    0.266052  0.396894
+
+Re-running FCM with best params (n=2, m=1.5) to get centers...
+Best Tuned Fuzzy C-Means centers saved to: ./unsw_analysis_results_final_v1/tuned_fcm_centers_unsw_no_outliers_scaled_n2_m1.5.pkl
+Saved centers file size: 0.000740 MB
+
+--- SHAP Analysis (Based on Tuned SCALED RF - unsw_no_outliers) ---
+
+--- Running SHAP Analysis (UNSW_NO_OUTLIERS_SCALED) ---
+Preprocessing test data for SHAP...
+Shape of data transformed for SHAP: (904, 175)
+Number of features for SHAP: 175
+Creating SHAP TreeExplainer...
+Calculating SHAP values for 100 samples...
+SHAP calculation took 0.96 seconds.
+SHAP values format: Single array (samples, features, classes).
+
+=== Mean Absolute SHAP Values (Feature Importance) ===
+smean             0.054508
+sbytes            0.050205
+proto_udp         0.032744
+sload             0.026506
+ct_dst_src_ltm    0.021188
+                    ...   
+proto_xns-idp     0.000000
+proto_prm         0.000000
+proto_i-nlsp      0.000000
+proto_ax.25       0.000000
+proto_isis        0.000000
+Length: 175, dtype: float64
+
+=== Top 10 Most Important Features (SHAP) ===
+smean               0.054508
+sbytes              0.050205
+proto_udp           0.032744
+sload               0.026506
+ct_dst_src_ltm      0.021188
+sinpkt              0.019986
+state_INT           0.019778
+ct_dst_sport_ltm    0.018064
+sjit                0.017699
+spkts               0.015764
+dtype: float64
+
+Generating SHAP Summary Plot (UNSW_NO_OUTLIERS_SCALED) (Class 1)...
+
+========================================
+ Model Training: Correlation Selected Features, SCALED (unsw_no_outliers)
+ (Threshold > 0.9)
+========================================
+
+Dropping 14 features based on initial correlation analysis...
+X_train_selected shape: (3616, 28)
+X_test_selected shape: (904, 28)
+
+Fitting new SCALED preprocessor for selected features...
+Scaled preprocessor for selected features fitted.
+
+--- Training and Evaluating Base RandomForestClassifier (UNSW_NO_OUTLIERS_SEL_SCALED) ---
+Fitting Base RandomForest pipeline...
+Base RandomForest fitting completed in 0.22 seconds.
+
+--- Evaluating Base RandomForest Model on Test Set ---
+Prediction completed in 0.01 seconds.
+Accuracy: 0.8905
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.70      0.70      0.70       164
+           1       0.93      0.93      0.93       740
+
+    accuracy                           0.89       904
+   macro avg       0.82      0.82      0.82       904
+weighted avg       0.89      0.89      0.89       904
+
+
+Confusion Matrix:
+[[115  49]
+ [ 50 690]]
+ROC AUC Score: 0.9527
+
+--- Training and Evaluating RandomForestClassifier (UNSW_NO_OUTLIERS_SEL_SCALED) ---
+Running GridSearchCV with 3 folds...
+Fitting 3 folds for each of 24 candidates, totalling 72 fits
+GridSearchCV completed in 1.80 seconds.
+
+Best Parameters Found (RandomForest): {'classifier__max_depth': None, 'classifier__min_samples_leaf': 1, 'classifier__min_samples_split': 5, 'classifier__n_estimators': 150}
+Best Cross-validation Accuracy (RandomForest): 0.8933
+
+--- Evaluating Tuned RandomForest Model on Test Set ---
+Prediction completed in 0.01 seconds.
+Accuracy: 0.8993
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.70      0.79      0.74       164
+           1       0.95      0.92      0.94       740
+
+    accuracy                           0.90       904
+   macro avg       0.82      0.86      0.84       904
+weighted avg       0.91      0.90      0.90       904
+
+
+Confusion Matrix:
+[[129  35]
+ [ 56 684]]
+ROC AUC Score: 0.9547
+
+Best Tuned RandomForest model saved to: ./unsw_analysis_results_final_v1/tuned_rf_model_unsw_no_outliers_sel_scaled.pkl
+Saved model size: 6.326 MB
+
+############################################################
+ SKIPPING DYNAMIC SHAP FEATURE SELECTION: SHAP analysis did not return importance values.
+############################################################
+
+==================================================
+ FULL Analysis Complete
+==================================================
+Results saved in: ./unsw_analysis_results_final_v1
+Summary log: ./unsw_analysis_results_final_v1/summary.txt
